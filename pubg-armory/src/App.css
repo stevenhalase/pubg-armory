@@ -1,0 +1,24 @@
+@import url('https://fonts.googleapis.com/css?family=Oswald:100,300,400,500,700,800,900|Roboto:100,100i,300,300i,400,400i,500,500i,700,700i,900,900i|Teko:400,500,700,900');
+
+* {
+  box-sizing: border-box;
+}
+
+.App {
+  background: #3D423E;  /* fallback for old browsers */
+  background: -webkit-linear-gradient(to top right, #0F0F0D, #242624, #3D423E);  /* Chrome 10-25, Safari 5.1-6 */
+  background: linear-gradient(to top right, #0F0F0D, #242624, #3D423E); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+button {
+  font-family: 'Oswald', sans-serif;
+}
+
+p {
+  font-family: 'Roboto', sans-serif;
+}
