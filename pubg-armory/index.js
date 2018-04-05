@@ -6,18 +6,6 @@ const request = require('request');
 const path = require('path');
 const port = process.env.PORT || 3080;
 
-// const uristring =
-//   process.env.MONGODB_URI ||
-//   'mongodb://stevenhalase:TIffany11..11..@themovingcompany-shard-00-00-d3ufd.mongodb.net:27017,themovingcompany-shard-00-01-d3ufd.mongodb.net:27017,themovingcompany-shard-00-02-d3ufd.mongodb.net:27017/test?ssl=true&replicaSet=TheMovingCompany-shard-0&authSource=admin'
-
-// mongoose.connect(uristring, (error) => {
-//   if (error) {
-//       console.error(error);
-//   } else {
-//       console.log('Mongoose connected successfully')
-//   }
-// })
-
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
 
@@ -35,10 +23,11 @@ const apiInstance = new Pubgapi('eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJqdGkiOi
 const PlayerDTO = require('./dto/PlayerDTO');
 const MatchDTO = require('./dto/MatchDTO');
 
-app.get('/api/v1/players/:playerName', (req, res) => {
+app.get('/api/v1/players/:regionId/:playerName', (req, res) => {
     let playerName = req.params.playerName;
-    if (playerName) {
-        GetPlayerData(playerName)
+    let regionId = req.params.regionId;
+    if (playerName && regionId) {
+        GetPlayerData(playerName, regionId)
             .then(player => {
                 res.json(player);
             })
@@ -50,13 +39,29 @@ app.get('/api/v1/players/:playerName', (req, res) => {
     }
 })
 
-function GetPlayerData(playerName) {
+app.get('/api/v1/matches/:regionId/:matchId', (req, res) => {
+    let matchId = req.params.matchId;
+    let regionId = req.params.regionId;
+    if (matchId && regionId) {
+        apiInstance.loadMatchById(matchId, regionId)
+            .then(matchData => {
+                res.json(new MatchDTO(matchData));
+            })
+            .catch(error => {{
+                res.json(error);
+            }})
+    } else {
+        res.json('Match ID required.');
+    }
+})
+
+function GetPlayerData(playerName, regionId) {
     return new Promise((resolve, reject) => {
-        apiInstance.searchPlayers({ playerNames: playerName })
+        apiInstance.searchPlayers({ playerNames: playerName }, regionId)
             .then(response => {
                 let player = new PlayerDTO(response.data[0]);
                 if (player.matches.length > 0) {
-                    GetMatchData(player)
+                    GetMatchDataFromPlayer(player, regionId)
                         .then(player => {
                             resolve(player);
                         })
@@ -71,27 +76,30 @@ function GetPlayerData(playerName) {
     })
 }
 
-function GetMatchData(player) {
+function GetMatchDataFromPlayer(player, regionId) {
     return new Promise((resolve, reject) => {
-        if (player.matches.length > 0) {
-            apiInstance.loadMatchById(player.matches[0].id)
-            .then(match => {
-                console.log(match);
-                player.matches[0] = new MatchDTO(match);
-                resolve(player);
-            })
-            .catch(error => {
-                reject(error);
-            })           
+        let matchesToGet = player.matches.length >= 3 ? 3 : player.matches.length;
+        if (matchesToGet) {
+            let matchPromisesArr = [];
+            for (let i = 0; i < matchesToGet; i++) {
+                matchPromisesArr.push(apiInstance.loadMatchById(player.matches[i].id, regionId));
+            }
+            Promise.all(matchPromisesArr)
+                .then(matchValues => {
+                    for(let i = 0; i < matchValues.length; i++) {
+                        player.matches[i] = new MatchDTO(matchValues[i]);
+                    }
+                    resolve(player);
+                })
+                .catch(error => {
+                    reject(error);
+                })
         } else {
-            resolve(error);
+            resolve();
         }
     })
     
 }
-
-// let ContactUsLeadRoutes = require('./ContactUsLead/ContactUsLeadRoutes');
-// app.use('/api/v1/contactuslead', ContactUsLeadRoutes);
 
 app.use(express.static(__dirname + '/build'));
 
