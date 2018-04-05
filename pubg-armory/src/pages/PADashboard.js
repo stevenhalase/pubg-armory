@@ -27,7 +27,7 @@ class PADashboard extends Component {
           <PAPlayerSearch searchplayer={this.props.searchplayer}/>
         </div>
         <PAMatches player={this.props.player} />
-        <PARecentMatch player={this.props.player} />
+        <PARecentMatch player={this.props.player} latestmatch={this.props.latestmatch} />
       </div>
     );
   }

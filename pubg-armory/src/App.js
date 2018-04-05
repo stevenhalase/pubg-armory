@@ -6,13 +6,16 @@ import PAPageContainer from './components/PAPageContainer';
 
 import './App.css';
 import PlayerDTO from './dto/PlayerDTO';
+import MatchDTO from './dto/MatchDTO';
+import Processor from './helpers/Processor';
 
 class App extends Component {
   constructor(props) {
     super(props);
     this.state = {
       APIService: new APIService(),
-      player: null
+      player: null,
+      latestMatch: null
     }
     this.handlePlayerSearch = this.handlePlayerSearch.bind(this);
   }
@@ -25,6 +28,7 @@ class App extends Component {
               <PAPageContainer>
                 <PADashboard 
                   player={this.state.player}
+                  latestmatch={this.state.latestMatch}
                   apiservice={this.state.APIService}
                   searchplayer={this.handlePlayerSearch} />
               </PAPageContainer>
@@ -37,7 +41,10 @@ class App extends Component {
     console.log(playerName)
     this.state.APIService.getPlayer(playerName)
       .then(response => {
-        this.setState({ player: new PlayerDTO(response.data) });
+        let player = new PlayerDTO(response.data);
+        player = Processor.processPlayer(player);
+        let latestMatch = new MatchDTO(player.matches[0]);
+        this.setState({ player, latestMatch });
       })
       .catch(error => {
         console.log(error);
